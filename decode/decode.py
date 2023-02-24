@@ -32,23 +32,34 @@ def energy_func(encoded: Tensor, P: Tensor, Q: Tensor) -> Callable[[Tensor], Ten
 def step_permutation(permutation: Tensor) -> Tensor:
     i, j = torch.randint(0, len(permutation), (2,))
     permutation_copy = permutation.clone()
-    permutation[i], permutation[j] = permutation_copy[j], permutation_copy[i]
-    return permutation.clone()
+    permutation_copy[i], permutation_copy[j] = permutation[j], permutation[i]
+    return permutation_copy
+
+def stop(prev_energies: deque[Tensor]) -> bool:
+    maxlen = prev_energies.maxlen if prev_energies.maxlen is not None else 0
+    if len(prev_energies) < maxlen:
+        return False
+    sum = torch.tensor(0.)
+    for i in range(1, len(prev_energies)):
+        sum += (prev_energies[i] - prev_energies[i - 1])
+    return sum.item() == 0.
 
 def metropolis(encoded: Tensor, P: Tensor, Q: Tensor) -> Tensor:
     energy = energy_func(encoded, P, Q)
     permutation = torch.arange(27)
     count = 0
-    prev = energy(permutation)
-    while True:
+    prev_energy = energy(permutation)
+    prev_energies = deque([prev_energy], maxlen=100)
+    while not stop(prev_energies):
         count += 1
         new_permutation = step_permutation(permutation)
-        delta_E = (new_energy := energy(new_permutation)) - prev
+        delta_E = (new_energy := energy(new_permutation)) - prev_energy
         if delta_E < 0 or torch.rand(1) < torch.exp(-delta_E):
-            print(count, new_energy)
             decode(new_permutation, encoded)
-            prev = new_energy
+            prev_energy = new_energy
+            prev_energies.append(new_energy.clone())
             permutation = new_permutation
+    return permutation
         
 def decode(permutation: Tensor, encoded: Tensor) -> str:
     idx = lambda i: chr(i + ord('a')) if i != 26 else ' '
@@ -57,17 +68,7 @@ def decode(permutation: Tensor, encoded: Tensor) -> str:
         f.write(decoded)
     return decoded
 
-def decode_test():
-    identity = torch.arange(27)
-    encoded = text_to_tensor('hello world')
-    assert decode(identity, encoded) == 'hello world'
-    permutation = step_permutation(identity)
-    print(decode(permutation, encoded))
-
 def main(args: argparse.Namespace):
-    if args.corpus is None and args.mined is None:
-        raise ValueError('Either --corpus or --mined must be specified.')
-
     if args.mined:
         P: Tensor = torch.tensor(torch.load(f'{args.mined}/P.pt'))
         Q: Tensor = torch.tensor(torch.load(f'{args.mined}/Q.pt'))
@@ -91,7 +92,6 @@ def main(args: argparse.Namespace):
     encoded = encoded.strip()
     encoded = text_to_tensor(encoded)
 
-    # decode_test()
     metropolis(encoded, P, Q)
 
 if __name__ == '__main__':
@@ -100,6 +100,6 @@ if __name__ == '__main__':
     parser.add_argument('--corpus', type=str, default=None)
     parser.add_argument('--mined', type=str, default=None)
     args = parser.parse_args()
+    if args.corpus is None and args.mined is None:
+        raise ValueError('Either --corpus or --mined must be specified.')
     main(args)
-
-
