@@ -4,6 +4,6 @@
 *.log
 *.out
 *.pdfsync
-*.pyg
+*.pyg*
 *.synctex.gz
 *.toc
