@@ -91,6 +91,8 @@ def main(args: DLNArgs):
 
     iteration = 0
     upstairs_losses: dict[int, list[float]] = {}
+    upstairs_losses_adam: dict[int, list[float]] = {}
+    upstairs_losses_rms: dict[int, list[float]] = {}
     downstairs_losses: dict[int, list[float]] = {}
     pbar = get_pbar()
 
@@ -100,7 +102,7 @@ def main(args: DLNArgs):
 
         if args.upstairs:
             upstairs_model = DLN(d, N)
-            optimizer = torch.optim.Adam(upstairs_model.parameters(), lr)
+            optimizer = torch.optim.SGD(upstairs_model.parameters(), lr)
             upstairs = upstairs_func(upstairs_model, target, optimizer)
             while (loss := upstairs(train=True).item()) > 1e-7:
                 upstairs_losses[trial].append(loss)
@@ -119,7 +121,7 @@ def main(args: DLNArgs):
 
     pbar.close()
     if args.plot:
-            plot_losses([upstairs_losses, downstairs_losses], "Upstairs vs Downstairs | d = 2, N = 3 | lr = 0.1")
+            plot_losses([upstairs_losses, downstairs_losses], "Upstairs vs Downstairs | d = 2, N = 3 | lr = 0.01")
 
 
 def get_pbar():
@@ -131,14 +133,18 @@ def plot_losses(variants: list[dict[int, list[float]]], title: str):
     i = 0
     for variant in variants:
         avg_trajectory = np.zeros(max(len(losses) for losses in variant.values()))
+        iters = []
         for trial, losses in variant.items():
-            # fill in missing iterations with the last loss and average across trials
             avg_trajectory[:len(losses)] += np.array(losses)
+            iters.append(len(losses))
+        mean = np.mean(iters)
+        std = np.std(iters)
+        print(f"Mean: {mean:.6f} | Std: {std:.6f}")
         avg_trajectory /= len(variant)
         plt.plot(avg_trajectory, label="Upstairs" if i == 0 else "Downstairs")
         i += 1
     plt.xlabel("Iteration")
-    # plt.xlim(0, 50)
+    plt.xlim(0, 500)
     plt.ylabel("Loss")
     plt.title(title)
     plt.legend()

@@ -144,64 +144,78 @@ def downstairs_func(model: DLN, target: Tensor, lr: float, N: int):
     return downstairs
 \end{minted}
 
+\subsection{Further exploration}
+\subsubsection{Optimizers}
+For the results in Section \ref{sec:results:acceleration}, we use stochastic gradient descent (SGD) for upstairs. However, we also experiment with other optimizers, including Adam and RMSprop. We find that in general, SGD performs best on shallow networks, whereas Adam begins to outperform on deeper networks. The results are shown in Figure \ref{fig:upstairs_optimizers}.
+
+\subsubsection{Learning rate}
+We also experiment with different learning rates for both upstairs and downstairs training. As expected, we find that the learning rate has a significant effect on the performance of the DLN, with higher learning rates amenable to shallow networks but not deep networks, where smaller learning rates are required.
+\\\\
+This reflects the intuition that as the network becomes deeper, the manifold of possible solutions becomes more complex, and the DLN must be more careful in its exploration of the manifold.
+\\\\
+The results are shown in Figure \ref{fig:lr}.
+
+\subsubsection{Network depth}
+
+
 \pagebreak
 
 \section{Results}
-\subsection{Implicit acceleration}
+\subsection{Implicit acceleration} \label{sec:results:acceleration}
 \begin{figure}[ht]
     \begin{subfigure}{0.5\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/upstairs_avg.png}
+        \includegraphics[width=\textwidth]{images/upstairs_avg_lr1e-2.png}
         \caption{100 trial average}
         \label{fig:upstairs_avg}
     \end{subfigure}
     \begin{subfigure}{0.5\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/upstairs_1.png}
+        \includegraphics[width=\textwidth]{images/upstairs_1_lr1e-2.png}
         \caption{a particular trajectory}
         \label{fig:upstairs_1}
     \end{subfigure}
-    \caption{Training upstairs with $d = 2, N = 3$, and learning rate = 0.1}
+    \caption{Training upstairs with $d = 2, N = 3$, and learning rate = 0.01}
     \label{fig:upstairs}
 \end{figure}
 \begin{figure}[ht]
     \begin{subfigure}{0.5\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/downstairs_avg.png}
+        \includegraphics[width=\textwidth]{images/downstairs_avg_lr1e-2.png}
         \caption{100 trial average}
         \label{fig:downstairs_avg}
     \end{subfigure}
     \begin{subfigure}{0.5\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/downstairs_1.png}
+        \includegraphics[width=\textwidth]{images/downstairs_1_lr1e-2.png}
         \caption{a particular trajectory}
         \label{fig:downstairs_1}
     \end{subfigure}
-    \caption{Training downstairs with $d = 2, N = 3$, and learning rate = 0.1}
+    \caption{Training downstairs with $d = 2, N = 3$, and learning rate = 0.01}
     \label{fig:downstairs}
 \end{figure}
 \subsubsection{Training upstairs}
-With $d = 2, N = 3$, and learning rate = 0.1, we are able to successfully train and consistently converge the DLN upstairs using the SGD optimizer. Measured across 100 trials, it takes an average of $113.43 \pm 15.84$ iterations to converge. The average trajectory and a particular trajectory are shown in Figure \ref{fig:upstairs}.
+With $d = 2, N = 3$, and learning rate = 0.01, we are able to successfully train and consistently converge the DLN upstairs using the SGD optimizer. Measured across 100 trials, it takes an average of $204.58$ iterations with standard deviation 101.03 iterations to converge. The average trajectory and a particular trajectory are shown in Figure \ref{fig:upstairs}.
 
 \subsubsection{Training downstairs}
-With $d = 2, N = 3$, and learning rate = 0.1, we are also able to successfully train and consistently converge downstairs. However, we find that the convergence is much slower and the trajectory is much more varied than upstairs. Measured across 100 trials, it takes an average of $180.34 \pm 171.46$ iterations to converge. The average trajectory and a particular trajectory are shown in Figure \ref{fig:downstairs}.
+With $d = 2, N = 3$, and learning rate = 0.01, we are also able to successfully train and consistently converge downstairs. However, we find that the convergence is much slower and the trajectory is much more varied than upstairs. Measured across 100 trials, it takes an average of 1410.79 iterations with standard deviation of 1019.89 iterations to converge. The average trajectory and a particular trajectory are shown in Figure \ref{fig:downstairs}.
 
 \subsubsection{Comparison}
 We observe that the convergence of the upstairs occurs more quickly and in a more predictable fashion than that of the downstairs, supporting the claim that overparameterization can lead to implicit acceleration. We plot average and particular trajectories for both upstairs and downstairs in Figure \ref{fig:upstairs_downstairs}.
 \begin{figure}[ht]
     \begin{subfigure}{0.5\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/upstairs_downstairs_avg.png}
+        \includegraphics[width=\textwidth]{images/upstairs_downstairs_avg_lr1e-2.png}
         \caption{100 trial average}
         \label{fig:upstairs_downstairs_avg}
     \end{subfigure}
     \begin{subfigure}{0.5\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{images/upstairs_downstairs_1.png}
+        \includegraphics[width=\textwidth]{images/upstairs_downstairs_1_lr1e-2.png}
         \caption{a particular trajectory}
         \label{fig:upstairs_downstairs_1}
     \end{subfigure}
-    \caption{Training upstairs compared to downstairs with $d = 2, N = 3$, and learning rate = 0.1}
+    \caption{Training upstairs compared to downstairs with $d = 2, N = 3$, and learning rate = 0.01}
     \label{fig:upstairs_downstairs}
 \end{figure}
 
