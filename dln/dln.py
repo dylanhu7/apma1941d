@@ -1,24 +1,23 @@
 import argparse
 from typing import Optional
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+# from scipy.linalg import fractional_matrix_power
+import scipy.linalg
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from tqdm import tqdm
-# from scipy.linalg import fractional_matrix_power
-import scipy.linalg
-import numpy as np
 
-import matplotlib.pyplot as plt
 
 class DLN(nn.Module):
     def __init__(self, d: int, N: int):
         super().__init__()
         self.d = d
         self.N = N
-        self.layers = nn.ModuleList(
-            [nn.Linear(d, d, bias=False) for _ in range(N)])
         self.params = nn.ParameterList(
             [nn.Parameter(torch.randn((d, d))) for _ in range(N)])
 
@@ -48,6 +47,7 @@ def upstairs_func(model: DLN,
         return W
     return upstairs
 
+
 def downstairs_func(model: DLN, target: Tensor, lr: float, N: int):
     def downstairs() -> Tensor:
         model.train(False)
@@ -58,15 +58,12 @@ def downstairs_func(model: DLN, target: Tensor, lr: float, N: int):
             WTW = W.T @ W
             d_W = torch.zeros_like(W)
             for i in range(1, N + 1):
-                # print(d_W)
-                # print(torch.pow(WWT, (N - i) / N))
-                # print(d_F)
-                # print(torch.pow(WTW, (i - 1) / N))
-                # print()
                 d_W = d_W + \
-                    np.array(scipy.linalg.fractional_matrix_power(WWT, (N - i) / N)) @ \
+                    scipy.linalg.fractional_matrix_power(
+                        WWT, (N - i) / N) @ \
                     np.array(d_F) @ \
-                    np.array(scipy.linalg.fractional_matrix_power(WTW, (i - 1) / N))
+                    scipy.linalg.fractional_matrix_power(
+                        WTW, (i - 1) / N)
             d_W = d_W * torch.ones_like(W) / N
             W = W - lr * d_W
             model.params[0] = W
@@ -88,53 +85,64 @@ def main(args: DLNArgs):
     d = args.d
     N = args.N
     lr = args.lr
-    upstairs_model = DLN(d, N)
-    downstairs_model = DLN(d, 1)
-    optimizer = torch.optim.Adam(upstairs_model.parameters(), lr)
     # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9999)
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10000, gamma=0.9)
     target = torch.randn((d, d))
-    
+
     iteration = 0
-    upstairs_losses = []
-    downstairs_losses = []
+    upstairs_losses: dict[int, list[float]] = {}
+    downstairs_losses: dict[int, list[float]] = {}
     pbar = get_pbar()
 
-    if args.upstairs:
-        upstairs = upstairs_func(upstairs_model, target, optimizer)
-        while (loss := upstairs(train=True)) > 1e-7:
-            upstairs_losses.append(loss.item())
-            pbar.update(1)
-            pbar.set_postfix_str(f"\b\b\033[1m\033[92mLoss: {loss:.6f}")
-            iteration += 1
+    for trial in range(args.trials):
+        upstairs_losses[trial] = []
+        downstairs_losses[trial] = []
 
-    if args.downstairs:
-        downstairs = downstairs_func(downstairs_model, target, lr, N=3)
-        while (loss := downstairs()) > 1e-7:
-            downstairs_losses.append(loss.item())
-            pbar.update(1)
-            pbar.set_postfix_str(f"\b\b\033[1m\033[92mLoss: {loss:.6f}")
-            iteration += 1
+        if args.upstairs:
+            upstairs_model = DLN(d, N)
+            optimizer = torch.optim.Adam(upstairs_model.parameters(), lr)
+            upstairs = upstairs_func(upstairs_model, target, optimizer)
+            while (loss := upstairs(train=True).item()) > 1e-7:
+                upstairs_losses[trial].append(loss)
+                pbar.update(1)
+                pbar.set_postfix_str(f"\b\b\033[1m\033[92mLoss: {loss:.6f}")
+                iteration += 1
+
+        if args.downstairs:
+            downstairs_model = DLN(d, 1)
+            downstairs = downstairs_func(downstairs_model, target, lr, N=3)
+            while (loss := downstairs().item()) > 1e-7:
+                downstairs_losses[trial].append(loss)
+                pbar.update(1)
+                pbar.set_postfix_str(f"\b\b\033[1m\033[92mLoss: {loss:.6f}")
+                iteration += 1
 
     pbar.close()
     if args.plot:
-        if args.upstairs:
-            plot_losses(upstairs_losses, "Upstairs Losses")
-        if args.downstairs:
-            plot_losses(downstairs_losses, "Upstairs Losses")
+            plot_losses([upstairs_losses, downstairs_losses], "Upstairs vs Downstairs | d = 2, N = 3 | lr = 0.1")
 
 
 def get_pbar():
     return tqdm(total=None, unit=" iterations", desc="\033[1m\033[94mTraining\033[0m", dynamic_ncols=True,
                 bar_format="\033[1m{desc}:\033[1m {n_fmt}{unit} | {postfix}\033[0m [{elapsed}, {rate_fmt}]")
 
-def plot_losses(losses: list[float], title: str):
-    plt.title(title)
-    plt.xlabel("Iteration")
-    plt.ylabel("Loss")
-    plt.plot(losses)
-    plt.show()
 
+def plot_losses(variants: list[dict[int, list[float]]], title: str):
+    i = 0
+    for variant in variants:
+        avg_trajectory = np.zeros(max(len(losses) for losses in variant.values()))
+        for trial, losses in variant.items():
+            # fill in missing iterations with the last loss and average across trials
+            avg_trajectory[:len(losses)] += np.array(losses)
+        avg_trajectory /= len(variant)
+        plt.plot(avg_trajectory, label="Upstairs" if i == 0 else "Downstairs")
+        i += 1
+    plt.xlabel("Iteration")
+    # plt.xlim(0, 50)
+    plt.ylabel("Loss")
+    plt.title(title)
+    plt.legend()
+    plt.show()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="DLN")
@@ -143,7 +151,8 @@ if __name__ == '__main__':
     parser.add_argument('--d', type=int, default=2, help="Matrix dimension")
     parser.add_argument('--N', type=int, default=3,
                         help="Number of W matrices upstairs")
-    parser.add_argument('--trials', type=int, default=1, help="Number of trials")
+    parser.add_argument('--trials', type=int, default=1,
+                        help="Number of trials")
     parser.add_argument('--plot', action='store_true')
     parser.add_argument('--lr', type=float, default=1e-3)
     args = parser.parse_args(namespace=DLNArgs())
