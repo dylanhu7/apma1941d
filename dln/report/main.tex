@@ -26,7 +26,7 @@
   \tableofcontents
 }
 \section{Introduction}
-With the expansion of computing capabilities driven in large part by innovations in GPUs in the past decade, deep approaches to machine learning formulated decades prior have finally become tractable. Moreover, with the abundance and accessibility of data as well as more complex and powerful model architectures, the impact and potential of deep learning and its applications have gained significant attention (pun intended).
+With the expansion of computing capabilities in the past decade, deep approaches to machine learning formulated decades prior have finally become tractable. Moreover, with the abundance and accessibility of data as well as more complex and powerful model architectures, the impact and potential of deep learning and its applications have gained significant attention (pun intended).
 \\\\
 In just the past few months, accessible tools powered by deep learning such as ChatGPT have catapulted deep learning into the mainstream. While exciting new developments in deep learning seem to arise each week, we take a step back and analyze some of the fundamental mathematical principles behind deep learning.
 \\\\
@@ -145,17 +145,23 @@ def downstairs_func(model: DLN, target: Tensor, lr: float, N: int):
 \end{minted}
 
 \subsection{Further exploration}
+
+\subsection{Network width}
+We experiment with $d=4, d=6$ network widths with a fixed $N = 3$. Results are shown in Figure \ref{fig:results:width}.
+
+\subsubsection{Network depth}
+We experiment with $N > 3$ network depths with a fixed $d = 2$. Results are shown in Figure \ref{fig:results:depth}.
+
 \subsubsection{Optimizers}
-For the results in Section \ref{sec:results:acceleration}, we use stochastic gradient descent (SGD) for upstairs. However, we also experiment with other optimizers, including Adam and RMSprop. We find that in general, SGD performs best on shallow networks, whereas Adam begins to outperform on deeper networks. The results are shown in Figure \ref{fig:upstairs_optimizers}.
+For the results in Section \ref{sec:results:acceleration}, we use stochastic gradient descent (SGD) for upstairs. However, we also experiment with other optimizers, including Adam and RMSprop. For all tests, we use $d = 2, N = 3$. The results are shown in Figure \ref{fig:results:optimizers}.
 
 \subsubsection{Learning rate}
-We also experiment with different learning rates for both upstairs and downstairs training. As expected, we find that the learning rate has a significant effect on the performance of the DLN, with higher learning rates amenable to shallow networks but not deep networks, where smaller learning rates are required.
+We also experiment with different learning rates with SGD for both upstairs and downstairs training. As expected, we find that the learning rate has a significant effect on the performance of the DLN, with higher learning rates amenable to shallow networks but not deep networks, where smaller learning rates are required.
 \\\\
 This reflects the intuition that as the network becomes deeper, the manifold of possible solutions becomes more complex, and the DLN must be more careful in its exploration of the manifold.
 \\\\
-The results are shown in Figure \ref{fig:lr}.
+The results are shown in Figure \ref{fig:results:lr}.
 
-\subsubsection{Network depth}
 
 
 \pagebreak
@@ -219,6 +225,90 @@ We observe that the convergence of the upstairs occurs more quickly and in a mor
     \label{fig:upstairs_downstairs}
 \end{figure}
 
+\subsection{Further exploration}
+
+\subsubsection{Network width}
+\begin{figure}[h!]
+    \begin{subfigure}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/upstairs_avg_d4.png}
+        \caption{100 trial average}
+        \label{fig:upstairs_avg_d4}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/upstairs_avg_d6.png}
+        \caption{a particular trajectory}
+        \label{fig:upstairs_avg_d6}
+    \end{subfigure}
+    \caption{$d = 2$ and $d=6$ for $N = 3$ and learning rate = 0.01}
+    \label{fig:results:width}
+\end{figure}
+Only $N=5$ resulted in reliable enough convergence across 100 trials; the results are shown in Figure \ref{fig:results:depth}. With $N > 5$, the DLN is able to converge, but the convergence becomes less and less reliable.
+\\\\
+We hypothesize that this is the vanishing or exploding gradient problem, which is a common problem in deep learning. The DLN is able to converge with $N=5$ because the gradient cannot compound to the point where it becomes too large or too small. We therefore experiment by adding various activations between each layer of the DLN.
+\\\\
+With ReLU activations, the model fails to converge at $N = 7$ and becomes stuck at a local minimum. With sigmoid activations, the model also fails to converge reliably but does consistently reach better local minima than ReLU. Lastly, with the tanh activation, the model does indeed reliably converge at $N = 7$, and it seems to reliably converge up until at least $N = 80$! Greater $N$ could not be tested for eventual convergence due to the increased runtime.
+\\\\
+We leave a principled explanation for the success of the tanh activation in this setting as future work.
+
+\subsubsection{Network depth}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{images/upstairs_avg_n5.png}
+    \caption{N = 5}
+    \label{fig:results:depth}
+\end{figure}
+In the case of $d=4$, the mean number of iterations measured across 100 trials is 142.34 iterations with standard deviation 159.37. In the case of $d=6$, the mean number of iterations measured across 100 trials is 79.03 iterations with standard deviation 44.76. In general, we find that increasing network width results in faster convergence, as there are more parameters to simultaneously tune in order to reduce the mean error. The results are shown in Figure \ref{fig:results:depth}.
+
+\subsubsection{Optimizers}
+We find that RMSprop performs best and slightly better than SGD, while Adam performs worst. The results are shown in Figure \ref{fig:results:optimizers}.
+\\\\
+A potential intuition for these results is that RMSprop and SGD are both first-order methods, while Adam is a first-order and second-order method. As the gradient flow is a first-order differential equation, it is possible that first-order optimizers are better suited for this task.
+\\\\
+Another potential intuition is that Adam may simply be too agressive and tend to overshoot. In fact, we notice that trajectories with adam are significantly less smooth.
+\\\\
+A more principled investigation of the effects of different optimizers is left for future work.
+\begin{figure}[h!]
+    \begin{subfigure}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/upstairs_avg_optimizers.png}
+        \caption{100 trial average}
+        \label{fig:upstairs_avg_optimizers}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/upstairs_1_optimizers.png}
+        \caption{a particular trajectory}
+        \label{fig:upstairs_1_optimizers}
+    \end{subfigure}
+    \caption{SGD, Adam, and RMSprop compared with $d = 2, N = 3$, and learning rate = 0.01}
+    \label{fig:results:optimizers}
+\end{figure}
+
+
+
+\subsubsection{Learning rate}
+With a learning rate of 0.05, the mean number of iterations for convergence is 51.67 with a standard deviation of 37.75. With a learning rate of 0.001, the mean number of iterations for convergence is 4811.72 with a standard deviation of 4742.84.
+\begin{figure}[h!]
+    \begin{subfigure}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/upstairs_avg_lr5e-2.png}
+        \caption{Learning rate = 0.05}
+        \label{fig:upstairs_avg_lr}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/upstairs_avg_lr1e-3.png}
+        \caption{Learning rate = 0.001}
+        \label{fig:upstairs_1_lr}
+    \end{subfigure}
+    \caption{SGD with learning rates 0.05 and 0.001 with $d = 2, N = 3$}
+    \label{fig:results:lr}
+\end{figure}
+We find that a learning rate of 0.05 is too large for even $N = 5$ to converge, whereas a learning rate of 0.01 failed to converge five out of 100 trials, and a learning rate of 0.001 consistently enabled convergence.
+\\\\
+This matches intuition, as deeper networks induce a more complex loss landscape, and a larger learning rate can lead to a more unstable trajectory. We hypothesize that the fragility in these experiments is caused by the lack of activation functions which are essential for avoiding vanishing or exploding gradients. As such, the DLN efficiently demonstrates both the effect of learning rate on deep networks and the importance of activation functions.
 
 \pagebreak
 

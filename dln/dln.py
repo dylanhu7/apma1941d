@@ -25,6 +25,7 @@ class DLN(nn.Module):
         x = torch.eye(self.d)
         for param in self.params:
             x = param @ x
+            x = F.tanh(x)
         return x
 
 
@@ -98,7 +99,10 @@ def main(args: DLNArgs):
 
     for trial in range(args.trials):
         upstairs_losses[trial] = []
+        upstairs_losses_adam[trial] = []
+        upstairs_losses_rms[trial] = []
         downstairs_losses[trial] = []
+        print(f"Trial {trial + 1}/{args.trials}")
 
         if args.upstairs:
             upstairs_model = DLN(d, N)
@@ -109,6 +113,22 @@ def main(args: DLNArgs):
                 pbar.update(1)
                 pbar.set_postfix_str(f"\b\b\033[1m\033[92mLoss: {loss:.6f}")
                 iteration += 1
+            # upstairs_model = DLN(d, N)
+            # optimizer = torch.optim.Adam(upstairs_model.parameters(), lr)
+            # upstairs = upstairs_func(upstairs_model, target, optimizer)
+            # while (loss := upstairs(train=True).item()) > 1e-7:
+            #     upstairs_losses_adam[trial].append(loss)
+            #     pbar.update(1)
+            #     pbar.set_postfix_str(f"\b\b\033[1m\033[92mLoss: {loss:.6f}")
+            #     iteration += 1
+            # upstairs_model = DLN(d, N)
+            # optimizer = torch.optim.RMSprop(upstairs_model.parameters(), lr)
+            # upstairs = upstairs_func(upstairs_model, target, optimizer)
+            # while (loss := upstairs(train=True).item()) > 1e-7:
+            #     upstairs_losses_rms[trial].append(loss)
+            #     pbar.update(1)
+            #     pbar.set_postfix_str(f"\b\b\033[1m\033[92mLoss: {loss:.6f}")
+            #     iteration += 1
 
         if args.downstairs:
             downstairs_model = DLN(d, 1)
@@ -121,7 +141,7 @@ def main(args: DLNArgs):
 
     pbar.close()
     if args.plot:
-            plot_losses([upstairs_losses, downstairs_losses], "Upstairs vs Downstairs | d = 2, N = 3 | lr = 0.01")
+            plot_losses([upstairs_losses], "Upstairs | d = 2, N = 5 | lr = 0.01 | 100 trial average")
 
 
 def get_pbar():
@@ -130,6 +150,7 @@ def get_pbar():
 
 
 def plot_losses(variants: list[dict[int, list[float]]], title: str):
+    labels = ["SGD", "Adam", "RMSprop"]
     i = 0
     for variant in variants:
         avg_trajectory = np.zeros(max(len(losses) for losses in variant.values()))
@@ -141,10 +162,10 @@ def plot_losses(variants: list[dict[int, list[float]]], title: str):
         std = np.std(iters)
         print(f"Mean: {mean:.6f} | Std: {std:.6f}")
         avg_trajectory /= len(variant)
-        plt.plot(avg_trajectory, label="Upstairs" if i == 0 else "Downstairs")
+        plt.plot(avg_trajectory, label=labels[i])
         i += 1
     plt.xlabel("Iteration")
-    plt.xlim(0, 500)
+    plt.xlim(0, 50)
     plt.ylabel("Loss")
     plt.title(title)
     plt.legend()
