@@ -1,10 +1,13 @@
-import torch
-import csv
-from torch import nn
-from torch import Tensor
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+import glob
+import os
 import argparse
+import csv
+
+import matplotlib.pyplot as plt
+import torch
+from matplotlib.animation import FuncAnimation
+from torch import Tensor, nn
+
 
 class MultiLayerPerceptron(nn.Module):
     def __init__(self, dimensions: list[int], activation_fn: nn.Module = nn.ReLU()):
@@ -79,7 +82,6 @@ def train(model, x, y, epochs, learning_rate):
         loss.backward()
         optimizer.step()
 
-
         if (epoch+1) % 50 == 0:
             print(f'Epoch {epoch+1}/{epochs}, Loss: {loss.item()}')
             
@@ -117,7 +119,10 @@ def animate_training(x: Tensor, ground_truth: Tensor, predictions: list[Tensor])
         return line2,
 
     ani = FuncAnimation(fig, update, frames=range(len(predictions)), blit=True)
-    plt.show()
+    out_dir = "output"
+    outfile = os.path.join(out_dir, f"training_animation_{len(glob.glob(os.path.join(out_dir, '*.mp4')))+1}.mp4")
+    ani.save(outfile, writer='ffmpeg', fps=50)
+    plt.close(fig)
     
 class Args(argparse.Namespace):
     use_positional_encoding: bool
@@ -132,10 +137,10 @@ def main(args: Args):
         if args.use_positional_encoding:
             x_enc = encoder(x)
             input_dim = x_enc.shape[-1]
-            model = MultiLayerPerceptron([input_dim, 5, 3, 5, 1], activation_fn=nn.ELU())
+            model = MultiLayerPerceptron([input_dim, 16, 16, 16, 1], activation_fn=nn.ELU())
             predictions, losses = train(model, x_enc, y, epochs=1000, learning_rate=0.001)
         else:
-            model = MultiLayerPerceptron([1, 5, 3, 5, 1], activation_fn=nn.ELU())
+            model = MultiLayerPerceptron([1, 16, 16, 16, 1], activation_fn=nn.ELU())
             predictions, losses = train(model, x, y, epochs=1000, learning_rate=0.001)
         animate_training(x, y, predictions)
         
@@ -143,5 +148,7 @@ def main(args: Args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_positional_encoding', action='store_true')
+    parser.add_argument('--output_dir', type=str, default='output')
     args = parser.parse_args(namespace=Args())
+    os.makedirs(args.output_dir, exist_ok=True)
     main(args)
