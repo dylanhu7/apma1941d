@@ -9,6 +9,14 @@ from matplotlib.animation import FuncAnimation
 from torch import Tensor, nn
 
 
+class Args(argparse.Namespace):
+    use_positional_encoding: bool
+    depth: int
+    width: int
+    pe_mode: str
+    output_dir: str
+
+
 class MultiLayerPerceptron(nn.Module):
     def __init__(self, dimensions: list[int], activation_fn: nn.Module = nn.ReLU()):
         super(MultiLayerPerceptron, self).__init__()
@@ -118,14 +126,21 @@ def animate_training(x: Tensor, ground_truth: Tensor, predictions: list[Tensor])
         line2.set_ydata(predictions[num])  # Update the model's predictions
         return line2,
 
-    ani = FuncAnimation(fig, update, frames=range(len(predictions)), blit=True)
-    out_dir = "output"
-    outfile = os.path.join(out_dir, f"training_animation_{len(glob.glob(os.path.join(out_dir, '*.mp4')))+1}.mp4")
-    ani.save(outfile, writer='ffmpeg', fps=50)
+    animation = FuncAnimation(fig, update, frames=range(len(predictions)), blit=True)
     plt.close(fig)
-    
-class Args(argparse.Namespace):
-    use_positional_encoding: bool
+    return animation
+
+def write_animation(animation: FuncAnimation, args: Args, i: int):
+    name_components: list[str] = []
+    name_components.append("d" + str(args.depth))
+    name_components.append("w" + str(args.width))
+    if args.use_positional_encoding:
+        name_components.append(args.pe_mode)
+    name_components.append(str(i))
+    filename = "_".join(name_components)
+    outfile = os.path.join(args.output_dir, f"{filename}.mp4")
+    animation.save(outfile, writer='ffmpeg', fps=50)
+
 
 def main(args: Args):
     data = load_data('data.csv')
@@ -133,7 +148,7 @@ def main(args: Args):
     encoder = PositionalEncoding(mode='sincos', num_bands=6)
 
     # Train the model
-    for x, y in data:
+    for i, (x, y) in enumerate(data):
         if args.use_positional_encoding:
             x_enc = encoder(x)
             input_dim = x_enc.shape[-1]
@@ -142,12 +157,15 @@ def main(args: Args):
         else:
             model = MultiLayerPerceptron([1, 16, 16, 16, 1], activation_fn=nn.ELU())
             predictions, losses = train(model, x, y, epochs=1000, learning_rate=0.001)
-        animate_training(x, y, predictions)
+        write_animation(animate_training(x, y, predictions), args, i)
         
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--use_positional_encoding', action='store_true')
+    parser.add_argument('--depth', type=int, default=3)
+    parser.add_argument('--width', type=int, default=16)
+    parser.add_argument('--use_positional_encoding', action='store_true', default=False)
+    parser.add_argument('--pe_mode', type=str, default='sincos')
     parser.add_argument('--output_dir', type=str, default='output')
     args = parser.parse_args(namespace=Args())
     os.makedirs(args.output_dir, exist_ok=True)
