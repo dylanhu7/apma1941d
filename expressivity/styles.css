@@ -29,7 +29,6 @@ video {
   @media (min-width: 768px) {
     width: 50%;
   }
-  outline: 1px solid black;
 }
 
 img {
@@ -62,4 +61,9 @@ summary {
 
 details > details {
   margin-left: 1rem;
+}
+
+a {
+  color: #000;
+  text-decoration: none;
 }
