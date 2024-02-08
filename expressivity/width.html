@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      An Exploration of Neural Network Expressivity and Approximation Dynamics
+    </title>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+  </head>
+  <body>
+    <div id="container">
+      <header>
+        <h1>
+          An Exploration of Neural Network Expressivity and Approximation
+          Dynamics
+        </h1>
+      </header>
+
+      <section>
+        <details>
+          <summary><a href="./time_dynamics.html">Time Dynamics</a></summary>
+        </details>
+      </section>
+
+      <section>
+        <details open>
+          <summary>Width</summary>
+          <details>
+            <summary>d = 32</summary>
+            <details>
+              <summary>Approximation Progression</summary>
+              <div class="videos">
+                <video autoplay loop>
+                  <source src="./output/d2_w32/0.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w32/1.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w32/2.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w32/3.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w32/4.mp4" type="video/mp4" />
+                </video>
+              </div>
+            </details>
+            <details>
+              <summary>Loss Progression</summary>
+              <div class="videos">
+                <img src="./output/d2_w32/0.png" />
+                <img src="./output/d2_w32/1.png" />
+                <img src="./output/d2_w32/2.png" />
+                <img src="./output/d2_w32/3.png" />
+                <img src="./output/d2_w32/4.png" />
+              </div>
+            </details>
+          </details>
+          <details>
+            <summary>d = 64</summary>
+            <details>
+              <summary>Approximation Progression</summary>
+              <div class="videos">
+                <video autoplay loop>
+                  <source src="./output/d2_w64/0.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w64/1.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w64/2.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w64/3.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w64/4.mp4" type="video/mp4" />
+                </video>
+              </div>
+            </details>
+            <details>
+              <summary>Loss Progression</summary>
+              <div class="videos">
+                <img src="./output/d2_w64/0.png" />
+                <img src="./output/d2_w64/1.png" />
+                <img src="./output/d2_w64/2.png" />
+                <img src="./output/d2_w64/3.png" />
+                <img src="./output/d2_w64/4.png" />
+              </div>
+            </details>
+          </details>
+          <details>
+            <summary>d = 128</summary>
+            <details>
+              <summary>Approximation Progression</summary>
+              <div class="videos">
+                <video autoplay loop>
+                  <source src="./output/d2_w128/0.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w128/1.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w128/2.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w128/3.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w128/4.mp4" type="video/mp4" />
+                </video>
+              </div>
+            </details>
+            <details>
+              <summary>Loss Progression</summary>
+              <div class="videos">
+                <img src="./output/d2_w128/0.png" />
+                <img src="./output/d2_w128/1.png" />
+                <img src="./output/d2_w128/2.png" />
+                <img src="./output/d2_w128/3.png" />
+                <img src="./output/d2_w128/4.png" />
+              </div>
+            </details>
+          </details>
+          <details>
+            <summary>d = 32 vs d = 128</summary>
+            <details>
+              <summary>Approximation Progression</summary>
+              <div class="videos">
+                <video autoplay loop>
+                  <source src="./output/d2_w32/0.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w128/0.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w32/2.mp4" type="video/mp4" />
+                </video>
+                <video autoplay loop>
+                  <source src="./output/d2_w128/2.mp4" type="video/mp4" />
+                </video>
+              </div>
+            </details>
+            <details>
+              <summary>Loss Progression</summary>
+              <div class="videos">
+                <img src="./output/d2_w32/0.png" />
+                <img src="./output/d2_w128/0.png" />
+                <img src="./output/d2_w32/2.png" />
+                <img src="./output/d2_w128/2.png" />
+              </div>
+            </details>
+          </details>
+        </details>
+      </section>
+
+      <section>
+        <details>
+          <summary><a href="./depth.html">Depth</a></summary>
+        </details>
+      </section>
+
+      <section>
+        <details>
+          <summary><a href="./equiparameter.html">Equiparameter</a></summary>
+        </details>
+      </section>
+
+      <section>
+        <details>
+          <summary><a href="./positional_encoding.html">Positional Encoding</a></summary>
+        </details>
+      </section>
+    </div>
+  </body>
+</html>
